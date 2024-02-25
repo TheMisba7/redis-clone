@@ -31,7 +31,7 @@ public class ConnectionHandler implements Runnable{
                 System.out.println("got it");
                 System.out.println(in);
                 if ("ping".equalsIgnoreCase(in)) {
-                    bufferedWriter.write("PONG".getBytes());
+                    bufferedWriter.write("+PONG".getBytes());
                     bufferedWriter.write("\r\n".getBytes());
                     bufferedWriter.flush();
                 }
