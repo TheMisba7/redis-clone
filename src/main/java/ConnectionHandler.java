@@ -25,6 +25,7 @@ public class ConnectionHandler implements Runnable{
         String in = null;
         try {
             while ((in = bufferedReader.readLine()) != null) {
+                System.out.println("my test:" + in);
                 System.out.println(in);
                 if ("ping".equalsIgnoreCase(in)) {
                     bufferedWriter.write("+PONG".getBytes());
@@ -32,12 +33,10 @@ public class ConnectionHandler implements Runnable{
                     bufferedWriter.flush();
                 } else if (in.startsWith("echo")) {
                     String[] echoes = in.split("echo ");
-                    byte [] res;
+                    byte [] res = new byte[0];
                     if (echoes.length > 1) {
                         res = echoes[1].getBytes();
-                    } else {
-                        res = "".getBytes();
-                    }
+                    } 
                     bufferedWriter.write(res);
                     bufferedWriter.write("\r\n".getBytes());
                     bufferedWriter.flush();
