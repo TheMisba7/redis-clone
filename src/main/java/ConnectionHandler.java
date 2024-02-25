@@ -25,10 +25,8 @@ public class ConnectionHandler implements Runnable{
     public void run() {
 
         String in = null;
-        System.out.println("started...");
         try {
             while ((in = bufferedReader.readLine()) != null) {
-                System.out.println("got it");
                 System.out.println(in);
                 if ("ping".equalsIgnoreCase(in)) {
                     bufferedWriter.write("+PONG".getBytes());
@@ -36,9 +34,6 @@ public class ConnectionHandler implements Runnable{
                     bufferedWriter.flush();
                 }
             }
-
-            System.out.println("leaving...");
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
