@@ -32,7 +32,13 @@ public class ConnectionHandler implements Runnable{
                     bufferedWriter.flush();
                 } else if (in.startsWith("echo")) {
                     String[] echoes = in.split("echo ");
-                    bufferedWriter.write(echoes[1].getBytes());
+                    byte [] res;
+                    if (echoes.length > 1) {
+                        res = echoes[1].getBytes();
+                    } else {
+                        res = "".getBytes();
+                    }
+                    bufferedWriter.write(res);
                     bufferedWriter.write("\r\n".getBytes());
                     bufferedWriter.flush();
                 }
