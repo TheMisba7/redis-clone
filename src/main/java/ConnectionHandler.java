@@ -30,6 +30,11 @@ public class ConnectionHandler implements Runnable{
                     bufferedWriter.write("+PONG".getBytes());
                     bufferedWriter.write("\r\n".getBytes());
                     bufferedWriter.flush();
+                } else if (in.startsWith("echo")) {
+                    String[] echoes = in.split("echo ");
+                    bufferedWriter.write(echoes[1].getBytes());
+                    bufferedWriter.write("\r\n".getBytes());
+                    bufferedWriter.flush();
                 }
             }
         } catch (IOException e) {
