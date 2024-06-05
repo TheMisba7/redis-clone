@@ -1,3 +1,5 @@
+import dao.IDao;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,9 +10,11 @@ public class ConnectionHandler implements Runnable{
     private Socket socket;
     private final BufferedReader bufferedReader;
     private final OutputStream bufferedWriter;
+    private final IDao dao;
 
-    public ConnectionHandler(Socket socket) {
+    public ConnectionHandler(Socket socket, IDao dao) {
         this.socket = socket;
+        this.dao = dao;
         try {
             this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.bufferedWriter = socket.getOutputStream();
@@ -26,17 +30,33 @@ public class ConnectionHandler implements Runnable{
         try {
             while ((in = bufferedReader.readLine()) != null) {
                 if ("ping".equalsIgnoreCase(in)) {
-                    bufferedWriter.write(Parser.encodeBulkStr("+PONG").getBytes());
-                    bufferedWriter.flush();
+                    encodeAndWrite("+PONG");
                 } else if (in.startsWith("*")) {
                     char size = in.toCharArray()[1];
                     String[] strings = readArray(Integer.parseInt(String.valueOf(size)));
-                    if ("ping".equalsIgnoreCase(strings[0])) {
-                        bufferedWriter.write(Parser.encodeBulkStr("+PONG").getBytes());
-                        bufferedWriter.flush();
-                    } else if ("echo".equalsIgnoreCase(strings[0])) {
-                        bufferedWriter.write(Parser.encodeBulkStr(strings[1]).getBytes());
-                        bufferedWriter.flush();
+                    String command = strings[0];
+                    if ("ping".equalsIgnoreCase(command)) {
+                        encodeAndWrite("+PONG");
+                    } else if ("echo".equalsIgnoreCase(command)) {
+                        encodeAndWrite(strings[1]);
+                    } else if ("SET".equalsIgnoreCase(command)) {
+                        if (strings.length != 3) {
+                            encodeAndWrite("invalid arguments");
+                        } else {
+                            dao.add(strings[1], strings[2]);
+                            write(Parser.OK);
+                        }
+                    } else if ("GET".equalsIgnoreCase(command)) {
+                        if (strings.length != 2) {
+                            encodeAndWrite("invalid arguments");
+                        } else  {
+                            String res = dao.get(strings[1]);
+                            if (res != null) {
+                                encodeAndWrite(res);
+                            } else {
+                                write(Parser.NULL_BULK);
+                            }
+                        }
                     }
                 }
             }
@@ -56,5 +76,14 @@ public class ConnectionHandler implements Runnable{
           index++;
       }
       return strings;
+    }
+
+    private void encodeAndWrite(String str) throws IOException {
+        write(Parser.encodeBulkStr(str));
+    }
+
+    private void write(String str) throws IOException {
+        bufferedWriter.write(str.getBytes());
+        bufferedWriter.flush();
     }
 }
