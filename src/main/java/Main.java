@@ -18,14 +18,14 @@ public class Main {
                 Thread.startVirtualThread(new ConnectionHandler(clientSocket));
             }
         } catch (IOException e) {
-          System.out.println("IOException: " + e.getMessage());
+          System.out.println(STR."IOException: \{e.getMessage()}");
         } finally {
           try {
             if (clientSocket != null) {
               clientSocket.close();
             }
           } catch (IOException e) {
-            System.out.println("IOException: " + e.getMessage());
+            System.out.println(STR."IOException: \{e.getMessage()}");
           }
         }
   }

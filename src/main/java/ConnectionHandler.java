@@ -6,8 +6,8 @@ import java.net.Socket;
 
 public class ConnectionHandler implements Runnable{
     private Socket socket;
-    private BufferedReader bufferedReader;
-    private OutputStream bufferedWriter;
+    private final BufferedReader bufferedReader;
+    private final OutputStream bufferedWriter;
 
     public ConnectionHandler(Socket socket) {
         this.socket = socket;
@@ -25,25 +25,36 @@ public class ConnectionHandler implements Runnable{
         String in = null;
         try {
             while ((in = bufferedReader.readLine()) != null) {
-                System.out.println("my test:" + in);
-                System.out.println(in);
                 if ("ping".equalsIgnoreCase(in)) {
-                    bufferedWriter.write("+PONG".getBytes());
-                    bufferedWriter.write("\r\n".getBytes());
+                    bufferedWriter.write(Parser.encodeBulkStr("+PONG").getBytes());
                     bufferedWriter.flush();
-                } else if (in.startsWith("echo")) {
-                    String[] echoes = in.split("echo ");
-                    byte [] res = new byte[0];
-                    if (echoes.length > 1) {
-                        res = echoes[1].getBytes();
-                    } 
-                    bufferedWriter.write(res);
-                    bufferedWriter.write("\r\n".getBytes());
-                    bufferedWriter.flush();
+                } else if (in.startsWith("*")) {
+                    char size = in.toCharArray()[1];
+                    String[] strings = readArray(Integer.parseInt(String.valueOf(size)));
+                    if ("ping".equalsIgnoreCase(strings[0])) {
+                        bufferedWriter.write(Parser.encodeBulkStr("+PONG").getBytes());
+                        bufferedWriter.flush();
+                    } else if ("echo".equalsIgnoreCase(strings[0])) {
+                        bufferedWriter.write(Parser.encodeBulkStr(strings[1]).getBytes());
+                        bufferedWriter.flush();
+                    }
                 }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+    public String[] readArray(int size) throws IOException {
+        String in = null;
+        String [] strings = new String[size];
+        int index = 0;
+      while (size > 0 && ((in = bufferedReader.readLine()) != null)) {
+          if (in.startsWith("$"))
+              continue;
+          size--;
+          strings[index] = in;
+          index++;
+      }
+      return strings;
     }
 }
