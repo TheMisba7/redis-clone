@@ -1,3 +1,6 @@
+package core;
+
+import core.ValueContainer;
 import dao.IDao;
 
 import java.io.BufferedReader;
@@ -5,12 +8,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
-
 public class ConnectionHandler implements Runnable{
     private Socket socket;
     private final BufferedReader bufferedReader;
     private final OutputStream bufferedWriter;
     private final IDao dao;
+
 
     public ConnectionHandler(Socket socket, IDao dao) {
         this.socket = socket;
@@ -25,7 +28,6 @@ public class ConnectionHandler implements Runnable{
 
     @Override
     public void run() {
-
         String in = null;
         try {
             while ((in = bufferedReader.readLine()) != null) {
@@ -33,30 +35,16 @@ public class ConnectionHandler implements Runnable{
                     encodeAndWrite("+PONG");
                 } else if (in.startsWith("*")) {
                     char size = in.toCharArray()[1];
-                    String[] strings = readArray(Integer.parseInt(String.valueOf(size)));
-                    String command = strings[0];
+                    String[] input = readArray(Integer.parseInt(String.valueOf(size)));
+                    String command = input[0];
                     if ("ping".equalsIgnoreCase(command)) {
                         encodeAndWrite("+PONG");
                     } else if ("echo".equalsIgnoreCase(command)) {
-                        encodeAndWrite(strings[1]);
+                        encodeAndWrite(input[1]);
                     } else if ("SET".equalsIgnoreCase(command)) {
-                        if (strings.length != 3) {
-                            encodeAndWrite("invalid arguments");
-                        } else {
-                            dao.add(strings[1], strings[2]);
-                            write(Parser.OK);
-                        }
+                        handleSetCommand(input);
                     } else if ("GET".equalsIgnoreCase(command)) {
-                        if (strings.length != 2) {
-                            encodeAndWrite("invalid arguments");
-                        } else  {
-                            String res = dao.get(strings[1]);
-                            if (res != null) {
-                                encodeAndWrite(res);
-                            } else {
-                                write(Parser.NULL_BULK);
-                            }
-                        }
+                      handleGetCommand(input);
                     }
                 }
             }
@@ -85,5 +73,44 @@ public class ConnectionHandler implements Runnable{
     private void write(String str) throws IOException {
         bufferedWriter.write(str.getBytes());
         bufferedWriter.flush();
+    }
+
+    private void handleSetCommand(String[] input) throws IOException {
+        if (input.length == 3) {
+            dao.add(input[1], new ValueContainer(input[2]));
+            write(Parser.OK);
+        } else if (input.length == 5) {
+            if ("px".equalsIgnoreCase(input[3])) {
+                try {
+                    long expiry = System.currentTimeMillis() + Long.parseLong(input[4]);
+                    dao.add(input[1], new ValueContainer(input[2], expiry));
+                    write(Parser.OK);
+                } catch (NumberFormatException e) {
+                    encodeAndWrite("expiry unpassable");
+                }
+            } else {
+                encodeAndWrite("invalid option");
+            }
+        } else {
+            encodeAndWrite("invalid arguments");
+        }
+    }
+
+    private void handleGetCommand(String[] input) throws IOException {
+        if (input.length != 2) {
+            encodeAndWrite("invalid arguments");
+        } else  {
+            ValueContainer res = dao.get(input[1]);
+            if (res != null) {
+                if (res.isExpired()) {
+                    dao.delete(input[1]);
+                    write(Parser.NULL_BULK);
+                } else {
+                    encodeAndWrite(res.getValue());
+                }
+            } else {
+                write(Parser.NULL_BULK);
+            }
+        }
     }
 }
