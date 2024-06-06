@@ -37,7 +37,7 @@ public class Server {
             serverSocket.bind(socketAddress);
             serverSocket.setReuseAddress(true);
 
-            //scheduler.scheduleAtFixedRate(new ExpiryCollector(dao), 1000, 1000, TimeUnit.MILLISECONDS);
+            scheduler.scheduleAtFixedRate(new ExpiryCollector(dao), 10, 10, TimeUnit.SECONDS);
             // Wait for connection from client.
             while (true) {
                 clientSocket = serverSocket.accept();

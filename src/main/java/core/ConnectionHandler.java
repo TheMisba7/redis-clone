@@ -86,7 +86,7 @@ public class ConnectionHandler implements Runnable{
                     dao.add(input[1], new ValueContainer(input[2], expiry));
                     write(Parser.OK);
                 } catch (NumberFormatException e) {
-                    encodeAndWrite("expiry unpassable");
+                    encodeAndWrite("expiry not parsable");
                 }
             } else {
                 encodeAndWrite("invalid option");
