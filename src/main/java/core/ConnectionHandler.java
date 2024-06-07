@@ -56,6 +56,21 @@ public class ConnectionHandler implements Runnable {
                             }
                             default -> throw new IllegalStateException(STR."Unexpected value: \{this.server}");
                         }
+                    } else if ("REPLCONF".equalsIgnoreCase(command)) {
+                        if (input.length == 3) {
+                            if ("listening-port".equalsIgnoreCase(input[1])) {
+                                int port = Integer.parseInt(input[2]);
+                                if (this.server instanceof Master) {
+                                    Master master = (Master) this.server;
+                                    master.getSlavePorts().add(port);
+                                    write(Parser.OK);
+                                }
+                            }else if ("capa".equalsIgnoreCase(input[1])) {
+                                write(Parser.OK);
+                            }
+                        } else {
+                            encodeAndWrite("invalid args");
+                        }
                     }
                 }
             }
