@@ -1,6 +1,5 @@
 package core;
 
-import core.ValueContainer;
 import dao.IDao;
 
 import java.io.BufferedReader;
@@ -8,18 +7,20 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
-public class ConnectionHandler implements Runnable{
+public class ConnectionHandler implements Runnable {
     private Socket socket;
     private final BufferedReader bufferedReader;
     private final OutputStream bufferedWriter;
     private final IDao dao;
+    private final Server server;
 
 
-    public ConnectionHandler(Socket socket, IDao dao) {
+    public ConnectionHandler(Socket socket, IDao dao, Server server) {
         this.socket = socket;
         this.dao = dao;
+        this.server = server;
         try {
-            this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             this.bufferedWriter = socket.getOutputStream();
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -45,6 +46,16 @@ public class ConnectionHandler implements Runnable{
                         handleSetCommand(input);
                     } else if ("GET".equalsIgnoreCase(command)) {
                       handleGetCommand(input);
+                    } else if ("INFO".equalsIgnoreCase(command)) {
+                        switch (this.server) {
+                            case Slave slave  -> {
+                                encodeAndWrite("role:slave");
+                            }
+                            case Master master -> {
+                                encodeAndWrite(STR."role:master\nmaster_replid:\{master.getReplId()}\nmaster_repl_offset:\{master.getReplOffset()}\n");
+                            }
+                            default -> throw new IllegalStateException(STR."Unexpected value: \{this.server}");
+                        }
                     }
                 }
             }

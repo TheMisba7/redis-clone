@@ -16,7 +16,7 @@ public class Parser {
     }
     public static String encodeArray(String[] array) {
         StringBuilder res = new StringBuilder(STR."*\{array.length}\{CRLF}");
-        for (int i = 1; i < array.length; i++) {
+        for (int i = 0; i < array.length; i++) {
             res.append(encodeBulkStr(array[i]));
         }
         return res.toString();

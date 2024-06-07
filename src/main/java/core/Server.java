@@ -1,7 +1,5 @@
 package core;
 
-import core.ConnectionHandler;
-import core.ExpiryCollector;
 import dao.IDao;
 import dao.IDaoImpl;
 
@@ -16,12 +14,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Server {
+public abstract class Server {
     private final String host;
-    private final int port;
+    private int port = 6379;
     private final List<Socket> connections = new ArrayList<>();
     private final IDao dao = new IDaoImpl();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private int replOffset = 0;
 
     public Server(String host, int port) {
         this.host = host;
@@ -41,7 +40,7 @@ public class Server {
             // Wait for connection from client.
             while (true) {
                 clientSocket = serverSocket.accept();
-                Thread.startVirtualThread(new ConnectionHandler(clientSocket, dao));
+                Thread.startVirtualThread(new ConnectionHandler(clientSocket, dao, this));
             }
         } catch (IOException e) {
             System.out.println(STR."IOException: \{e.getMessage()}");
@@ -54,5 +53,15 @@ public class Server {
                 System.out.println(STR."IOException: \{e.getMessage()}");
             }
         }
+    }
+
+    public int getReplOffset() {
+        return replOffset;
+    }
+
+    public static class ServerArgs {
+        public static final String PORT_ARG = "--port";
+        public static final String REPLICA_OF = "--replicaof";
+        public static final int DEFAULT_PORT = 6379;
     }
 }
