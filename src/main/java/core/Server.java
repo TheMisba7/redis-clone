@@ -15,12 +15,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public abstract class Server {
-    private final String host;
-    private int port = 6379;
+    protected final String host;
+    protected int port = 6379;
     private final List<Socket> connections = new ArrayList<>();
-    private final IDao dao = new IDaoImpl();
+    protected final IDao dao = new IDaoImpl();
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-    private int replOffset = 0;
+    protected int replOffset = 0;
 
     public Server(String host, int port) {
         this.host = host;

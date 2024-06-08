@@ -13,9 +13,50 @@ public class Slave extends Server {
         super(host, port);
         this.masterHost = masterHost;
         this.masterPort = masterPort;
-        pingMaster();
+        startHandshake();
     }
 
+    private void startHandshake() {
+        Socket socket = null;
+        try {
+            socket = new Socket(masterHost, masterPort);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            CommandSender.ping(socket.getOutputStream());
+            if (CommandSender.parseResponse(in, "+pong")) {
+                System.out.println("slave got pong from master");
+                CommandSender.replConfig(socket.getOutputStream(), "listening-port", String.valueOf(this.port));
+                if (CommandSender.parseResponse(in, "+OK")) {
+                    CommandSender.replConfig(socket.getOutputStream(), "capa", "psync2");
+                    if (CommandSender.parseResponse(in, "+OK")) {
+                        CommandSender.pSync(socket.getOutputStream());
+                        if (CommandSender.parseResponse(in, "+FULLRESYNC")) {
+                            System.out.println("slave and master shaked hands");
+                        }
+                    }
+
+
+                } else {
+                    System.out.println("repl config failed: listening-port");
+                }
+
+
+
+
+
+            } else {
+                System.out.println("ping master failed");
+            }
+
+
+
+
+
+
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public void pingMaster() {
         Socket socket = null;
         try {

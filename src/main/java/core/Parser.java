@@ -22,4 +22,8 @@ public class Parser {
         return res.toString();
 
     }
+
+    public static String encodeSimpleStr(String str) {
+        return STR."+\{str}\{CRLF}";
+    }
 }
